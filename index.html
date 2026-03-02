@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S.Tech Waterproofing Company</title>
+
+<style>
+body{
+  font-family: monospace;
+  background:#f4f6ff;
+  padding:15px;
+  margin:0;
+  transition:0.4s;
+}
+
+h2{
+  text-align:center;
+  color:#2c3e50;
+}
+
+textarea{
+  width:100%;
+  height:180px;
+  padding:12px;
+  font-size:16px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  font-size:16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover{
+  opacity:0.85;
+}
+
+.save{background:#27ae60;color:white;}
+.show{background:#3498db;color:white;}
+.backup{background:#9b59b6;color:white;}
+.edit{background:#34495e;color:white;}
+.clear{background:#e74c3c;color:white;}
+
+#balance{
+  margin-top:10px;
+  font-size:18px;
+  font-weight:bold;
+  text-align:center;
+}
+
+#notebook{
+  margin-top:12px;
+  padding:12px;
+  border-radius:8px;
+  background:white;
+  border:1px solid #ddd;
+  white-space:pre-wrap;
+  display:none;
+  animation:fade 0.4s ease;
+}
+
+@keyframes fade{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+#suggestions{
+  color:#888;
+  font-size:14px;
+  margin-top:4px;
+}
+
+#entryUI{
+  transition:0.4s;
+}
+
+.hide{
+  opacity:0;
+  transform:translateY(-10px);
+  pointer-events:none;
+}
+
+#extraButtons{
+  display:none;
+  margin-top:12px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>S.Tech Waterproofing Company</h2>
+
+<div id="entryUI">
+<textarea id="entry" placeholder="Write entry..."></textarea>
+<div id="suggestions"></div>
+<button class="save" onclick="prepareSave()">Save</button>
+</div>
+
+<button class="show" id="showBtn" onclick="toggleData()">Show Data</button>
+
+<div id="balance"></div>
+
+<div id="notebook"></div>
+
+<div id="extraButtons">
+<button class="edit" onclick="editData()">Edit Data</button>
+<button class="backup" onclick="backupTXT()">Backup Data</button>
+<button class="clear" onclick="clearData()">Clear All Data</button>
+</div>
+
+<script>
+const labourDB=["Raju","Mohan","Karim","Amit","Salman","Sonu"];
+const noteDB=["metro topup","cement","sand","travel","diesel","food"];
+
+function today(){
+  let d=new Date();
+  return d.getDate()+"/"+(d.getMonth()+1)+"/"+d.getFullYear();
+}
+
+function prepareSave(){
+  let text=document.getElementById("entry").value.trim();
+  if(text==""){ alert("Empty entry"); return; }
+
+  let final="DATE: "+today()+"\n"+text+"\n-------------\n";
+
+  let ok=confirm("OK = Save\nCancel = Edit");
+  if(ok){
+    saveEntry(final);
+  } else {
+    document.getElementById("entry").value=final;
+  }
+}
+
+function saveEntry(data){
+  let old=localStorage.getItem("notebook")||"";
+  localStorage.setItem("notebook",old+data);
+  document.getElementById("entry").value="";
+  updateBalance();
+}
+
+function toggleData(){
+  let nb=document.getElementById("notebook");
+  let btn=document.getElementById("showBtn");
+  let extra=document.getElementById("extraButtons");
+  let entryUI=document.getElementById("entryUI");
+
+  if(nb.style.display=="none"){
+    entryUI.classList.add("hide");
+    setTimeout(()=>{
+      entryUI.style.display="none";
+      nb.style.display="block";
+      extra.style.display="block";
+    },300);
+
+    btn.innerText="Hide Data";
+    let data=localStorage.getItem("notebook")||"";
+    nb.innerText=data;
+  } else {
+    nb.style.display="none";
+    extra.style.display="none";
+    entryUI.style.display="block";
+    setTimeout(()=>{entryUI.classList.remove("hide");},50);
+    btn.innerText="Show Data";
+  }
+}
+
+// Advanced balance calculation
+function updateBalance(){
+  let data = localStorage.getItem("notebook") || "";
+  // Only numbers with + or - in front
+  let numbers = data.match(/[+-]\d+/g);
+  let total = 0;
+  if(numbers){
+    numbers.forEach(n=>{
+      total += parseInt(n, 10);
+    });
+  }
+  document.getElementById("balance").innerText = "Balance : " + total;
+}
+
+function backupTXT(){
+  let data=localStorage.getItem("notebook")||"";
+  let blob=new Blob([data],{type:"text/plain"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="site_notebook_backup.txt";
+  a.click();
+}
+
+function clearData(){
+  let pass=prompt("Enter Password");
+  if(pass==="525252"){
+    localStorage.removeItem("notebook");
+    alert("All Data Cleared");
+    document.getElementById("notebook").innerText="";
+    updateBalance();
+  } else {
+    alert("Wrong Password");
+  }
+}
+
+function editData(){
+  let pass=prompt("Enter Password");
+  if(pass==="525252"){
+    let data=localStorage.getItem("notebook")||"";
+    let newData=prompt("Edit Data",data);
+    if(newData!=null){
+      localStorage.setItem("notebook",newData);
+      document.getElementById("notebook").innerText=newData;
+      updateBalance();
+    }
+  } else {
+    alert("Wrong Password");
+  }
+}
+
+// Smart suggestions
+document.getElementById("entry").addEventListener("input",function(){
+  let text=this.value.toLowerCase();
+  let guess="";
+  labourDB.forEach(n=>{
+    if(n.toLowerCase().startsWith(text)) guess="Labour: "+n;
+  });
+  noteDB.forEach(n=>{
+    if(n.startsWith(text)) guess="Note: "+n;
+  });
+  document.getElementById("suggestions").innerText=guess;
+});
+
+updateBalance();
+</script>
+
+</body>
+</html>
